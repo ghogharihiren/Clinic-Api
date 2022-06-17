@@ -58,3 +58,8 @@ class ViewAppointmentSerializers(serializers.ModelSerializer):
     class Meta:
         model=Appointments
         fields='__all__'
+        
+class ChangeStatusSerializers(serializers.ModelSerializer):
+    class Meta:
+        model=Appointments
+        fields=['status']

@@ -16,6 +16,8 @@ urlpatterns = [
     path('edit-slot/<int:pk>',EditSlotView.as_view()),
     path('delete-slot/<int:pk>',DeleteSlotView.as_view()),
     path('my-slot/',MySlotView.as_view()),
+    path('mybook-appointment/<int:pk>',MyBookAppointment.as_view()),
+    path('edit-status/<int:pk>',ChangeStatusView.as_view()),
     
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>patient-Api>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     

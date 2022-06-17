@@ -35,6 +35,7 @@ def index(request):
         'edit-slot':'edit-slot/id',
         'delete-slot':'/delete-slot/id',
         'my-slot':'/my-slot/',
+        'mybook-appointment':'/mybook-appointment/slot-id',
         'edit-patient':'/edit-patient/',
         'book-appointment':'/book-appointment/',
         'my-appointment':'/my-appointment/',
@@ -57,7 +58,7 @@ class LoginViews(GenericAPIView):
             user = authenticate(email=email, password=password)
             if user is not None:
                 token = get_tokens_for_user(user)
-                login(request,user)
+                # login(request,user)
                 return Response({'token':token,'msg':'login Sucessfully'},status=status.HTTP_200_OK)
             else: 
                 return Response({'msg':"invalid email and password "},status=status.HTTP_404_NOT_FOUND)
@@ -89,13 +90,11 @@ class UsercreateView(GenericAPIView):
             return Response({'msg':'user created'},status=status.HTTP_200_OK)
         return Response({'msg':'Enter the valid data'},status=status.HTTP_404_NOT_FOUND)
     
-
 class UserListView(ListAPIView):
     permission_classes=[IsAdminUser]
     queryset=User.objects.all()
     serializer_class=EditUserSerializers
         
-    
 class EditUserView(GenericAPIView):
     permission_classes=[IsAdminUser]
     queryset=User.objects.all()
@@ -146,6 +145,7 @@ class DrEditView(GenericAPIView):
             return Response(serializer.data)
         else:
             return Response('data not found')
+        
     def put(self,request):
         uid=User.objects.get(id=request.user.id)
         if uid.role == 'doctor':
@@ -184,15 +184,14 @@ class EditSlotView(GenericAPIView):
     
     def put(self,request,pk):
         user=request.user
-        if user.role == 'doctor':
-            uid=Slot.objects.get(id=pk)
+        uid=Slot.objects.get(id=pk)
+        if uid.doctor == user:
             serializer=EditSlotSerializers(instance=uid,data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return Response({'status':'HTTP_200','msg':'slot Update'})
             return Response({'status':'HTTP_404_NOT_FOUND','msg':'Enter the valid data'})
         return Response('only doctor edit slot')
-        
         
 class DeleteSlotView(GenericAPIView):
     permission_classes=[IsAuthenticated]
@@ -209,13 +208,12 @@ class DeleteSlotView(GenericAPIView):
     
     def delete(self,request,pk):
         user=request.user
-        if user.role == 'doctor':
-            uid=self.get_object(pk=pk)
-            if uid.doctor == user:
-                uid.delete()
-                return Response('Slot deleted') 
-            return Response('you can delete only your Slot')
-        return Response('only doctor delete slot')
+        uid=self.get_object(pk=pk)
+        if uid.doctor == user:
+            uid.delete()
+            return Response('Slot deleted') 
+        return Response('you can delete only your Slot')
+
         
 class MySlotView(GenericAPIView):
     permission_classes=[IsAuthenticated]
@@ -226,8 +224,28 @@ class MySlotView(GenericAPIView):
         serializer=EditSlotSerializers(slot,many=True)
         return Response(serializer.data)
     
-            
+class MyBookAppointment(GenericAPIView):
+    permission_classes=[IsAuthenticated]
     
+    def get(self,request,pk):
+        slot=Slot.objects.get(id=pk)
+        app=Appointments.objects.filter(slot=slot)
+        serializer=ViewAppointmentSerializers(app,many=True)
+        return Response(serializer.data)
+
+class ChangeStatusView(GenericAPIView):
+    permission_classes=[IsAuthenticated]
+    
+    def put(self,request,pk):
+        uid=Appointments.objects.get(id=pk)
+        if uid.slot.doctor == request.user:
+            serializer=ChangeStatusSerializers(instance=uid,data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'status change'},status=status.HTTP_200_OK)
+            return Response({'enter the valid data'},status=status.HTTP_200_OK)
+        return Response('you can not change status')
+            
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>PATIENT>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 class PatientEditView(GenericAPIView):
@@ -250,6 +268,7 @@ class PatientEditView(GenericAPIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response({'msg':'Your profile update'},status=status.HTTP_200_OK)
+            print(serializer.errors)
             return Response({'msg':'Enter the valid data'},status=status.HTTP_404_NOT_FOUND)
         else:
             return Response('data Not Found')
@@ -283,7 +302,6 @@ class MyAppointmentView(GenericAPIView):
 class EditAppointmentView(GenericAPIView):
     permission_classes=[IsAuthenticated]
     
-    
     def get(self,request,pk):
         uid=Appointments.objects.get(id=pk)
         serializer=ViewAppointmentSerializers(uid)
@@ -291,11 +309,13 @@ class EditAppointmentView(GenericAPIView):
     
     def put(self,request,pk):
         uid=Appointments.objects.get(id=pk)
-        serializer=EditAppointmentSerializers(instance=uid,data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'msg':'appointment Edit'},status=status.HTTP_200_OK)
-        return Response({'msg':'enter the valid data'},status=status.HTTP_404_NOT_FOUND)
+        if uid.patient == request.user:
+            serializer=EditAppointmentSerializers(instance=uid,data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({'msg':'appointment Edit'},status=status.HTTP_200_OK)
+            return Response({'msg':'enter the valid data'},status=status.HTTP_404_NOT_FOUND)
+        return Response('you can edit only your appointment')
     
 class DeleteAppointmnetView(GenericAPIView):
     permission_classes=[IsAuthenticated]
