@@ -9,6 +9,9 @@ from django.contrib.auth import authenticate,login,logout
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import*
 from rest_framework import status
+from django.contrib.auth.hashers import make_password
+from django.conf import settings
+from django.core.mail import send_mail
 
 
 # Create your views here.
@@ -64,6 +67,9 @@ class LoginViews(GenericAPIView):
                 return Response({'msg':"invalid email and password "},status=status.HTTP_404_NOT_FOUND)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
+    
+    
+    
 # class LogoutView(GenericAPIView):
 #     queryset=User.objects.all()
 #     serializer_class=UsercreateSerializers
@@ -79,13 +85,20 @@ class LoginViews(GenericAPIView):
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>ADMIN>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 class UsercreateView(GenericAPIView):
-    # permission_classes=[IsAdminUser]
+    permission_classes=[IsAdminUser]
     queryset=User.objects.all()
     serializer_class=UsercreateSerializers
     
     def post(self,request):
         serializer=UsercreateSerializers(data=request.data)
         if serializer.is_valid(raise_exception=True):
+            # email=serializer.data.get('email')
+            # password=serializer.data.get('password')
+            # message = f"""Hello your email is {email},
+            # and Your password is {password} plase change your password """
+            # email_from = settings.EMAIL_HOST_USER
+            # recipient_list = [email,]
+            # send_mail( "your login details", message, email_from, recipient_list ) 
             serializer.save()
             return Response({'msg':'user created'},status=status.HTTP_200_OK)
         return Response({'msg':'Enter the valid data'},status=status.HTTP_404_NOT_FOUND)
