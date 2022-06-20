@@ -1,17 +1,19 @@
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from rest_framework.views import APIView
 from .models import*
 from .serializers import*
 from rest_framework.generics import*
-from django.contrib.auth import authenticate,login,logout
+from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import*
 from rest_framework import status
 from django.contrib.auth.hashers import make_password
 from django.conf import settings
 from django.core.mail import send_mail
+from rest_framework_simplejwt.tokens import RefreshToken
+import random
+from django.contrib.auth.hashers import make_password
 
 
 # Create your views here.
@@ -67,21 +69,26 @@ class LoginViews(GenericAPIView):
                 return Response({'msg':"invalid email and password "},status=status.HTTP_404_NOT_FOUND)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
+class UserChangePasswordview(UpdateAPIView):
+    serializer_class=ChangePasswordSerializer
+    permission_classes=[IsAuthenticated]
+    queryset=User.objects.all()
+   
+class ForgotPasswordView(GenericAPIView):
+    permission_classes=[IsAuthenticated]
     
-    
-    
-# class LogoutView(GenericAPIView):
-#     queryset=User.objects.all()
-#     serializer_class=UsercreateSerializers
-    
-#     def post(self,request):
-#         token = get_tokens_for_user(request.user)
-#         token.blacklist()
-#         logout(request.user)
-#         return Response({'Msg':'Logout'},status=status.HTTP_200_OK)
-    
-    
-        
+    def post(self,request):
+        user=request.user
+        password = ''.join(random.choices('qwyertovghlk34579385',k=9))
+        subject="Rest Password"
+        message = f"""Hello {user.email},Your New password is {password}"""
+        email_from = settings.EMAIL_HOST_USER
+        recipient_list = [user.email,]
+        send_mail( subject, message, email_from, recipient_list )
+        user.password=make_password(password)
+        user.save()
+        return Response('hello')
+       
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>ADMIN>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 class UsercreateView(GenericAPIView):
@@ -92,13 +99,13 @@ class UsercreateView(GenericAPIView):
     def post(self,request):
         serializer=UsercreateSerializers(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            # email=serializer.data.get('email')
-            # password=serializer.data.get('password')
-            # message = f"""Hello your email is {email},
-            # and Your password is {password} plase change your password """
-            # email_from = settings.EMAIL_HOST_USER
-            # recipient_list = [email,]
-            # send_mail( "your login details", message, email_from, recipient_list ) 
+            email=request.data.get('email')
+            password=request.data.get('password')
+            message = f"""Hello your username is {email},
+            and Your password is {password} plase change your password """
+            email_from = settings.EMAIL_HOST_USER
+            recipient_list = [email,]
+            send_mail( "your login details", message, email_from, recipient_list ) 
             serializer.save()
             return Response({'msg':'user created'},status=status.HTTP_200_OK)
         return Response({'msg':'Enter the valid data'},status=status.HTTP_404_NOT_FOUND)

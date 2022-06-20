@@ -4,6 +4,8 @@ from .views import*
 urlpatterns = [
     path('',index,name='index'),
     path('login/',LoginViews.as_view()),
+    path('change-password/<int:pk>',UserChangePasswordview.as_view()),
+    path('forgot-password/',ForgotPasswordView.as_view()),
     #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>ADMIN-API>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
     path('create-user/',UsercreateView.as_view()),
     path('user-list/',UserListView.as_view()),
