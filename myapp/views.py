@@ -53,7 +53,7 @@ def index(request):
 
 class LoginViews(GenericAPIView):
     queryset=User.objects.all()
-    serializer_class=UsercreateSerializers
+    serializer_class=UserLoginSerializers
     
     def post(self,request):
         serializer=UserLoginSerializers(data=request.data)
