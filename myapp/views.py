@@ -102,7 +102,7 @@ class UsercreateView(GenericAPIView):
             email=request.data.get('email')
             password=request.data.get('password')
             message = f"""Hello your username is {email},
-            and Your password is {password} plase change your password """
+            and Your password is {password} please change your password """
             email_from = settings.EMAIL_HOST_USER
             recipient_list = [email,]
             send_mail( "your login details", message, email_from, recipient_list ) 
