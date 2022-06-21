@@ -69,26 +69,41 @@ class LoginViews(GenericAPIView):
                 return Response({'msg':"invalid email and password "},status=status.HTTP_404_NOT_FOUND)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
     
-class UserChangePasswordview(UpdateAPIView):
+class UserChangePasswordview(GenericAPIView):
     serializer_class=ChangePasswordSerializer
     permission_classes=[IsAuthenticated]
-    queryset=User.objects.all()
-   
+    
+    def put(self,request):
+        user=User.objects.get(id=request.user.id)
+        serializer=ChangePasswordSerializer(instance=user,data=request.data)
+        if serializer.is_valid():
+            password=serializer.validated_data.get('password')
+            serializer.save(password=make_password(password))
+            return Response('your password change')
+        else:
+            return Response('enter the valid data')
 class ForgotPasswordView(GenericAPIView):
-    permission_classes=[IsAuthenticated]
+    serializer_class=ForgotPasswordSerializer
     
     def post(self,request):
-        user=request.user
-        password = ''.join(random.choices('qwyertovghlk34579385',k=9))
-        subject="Rest Password"
-        message = f"""Hello {user.email},Your New password is {password}"""
-        email_from = settings.EMAIL_HOST_USER
-        recipient_list = [user.email,]
-        send_mail( subject, message, email_from, recipient_list )
-        user.password=make_password(password)
-        user.save()
-        return Response('hello')
-       
+        serializer=ForgotPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            email=serializer.validated_data.get('email')
+            if User.objects.filter(email=email).exists():
+                user=User.objects.get(email=email)
+                password = ''.join(random.choices('qwyertovghlk34579385',k=8))
+                subject="Rest Password"
+                message = f"""Hello {user.email},Your New password is {password}"""
+                email_from = settings.EMAIL_HOST_USER
+                recipient_list = [user.email,]
+                send_mail( subject, message, email_from, recipient_list )
+                user.password=make_password(password)
+                user.save()
+                return Response('your new password send')
+            else:
+                return Response('enter your email')
+        else:
+            return Response('enter the valid data')
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>ADMIN>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 class UsercreateView(GenericAPIView):

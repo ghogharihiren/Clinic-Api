@@ -40,6 +40,13 @@ class PatientEditProfileSerializers(serializers.ModelSerializer):
         model=User
         fields=['email','addres','gender','mobile','pic']    
  
+        
+class ForgotPasswordSerializer(serializers.ModelSerializer):
+    email=serializers.EmailField(max_length=30)
+    class Meta:
+        model=User
+        fields=['email']
+        
 class ChangePasswordSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
     password2 = serializers.CharField(write_only=True, required=True)
@@ -48,28 +55,7 @@ class ChangePasswordSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('old_password', 'password', 'password2')
-
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
-
-        return attrs
-
-    def validate_old_password(self, value):
-        user = self.context['request'].user
-        if not user.check_password(value):
-            raise serializers.ValidationError({"old_password": "Old password is not correct"})
-        return value
-
-    def update(self, instance, validated_data):
-
-        instance.set_password(validated_data['password'])
-        instance.save()
-
-        return instance
-    
-
-    
+            
         
 class SlotCreateSerializers(serializers.ModelSerializer):
     class Meta:
